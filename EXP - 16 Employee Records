@@ -1,0 +1,124 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define FILE_NAME "employees.dat"
+typedef struct {
+    int id;
+    char name[30];
+    float salary;
+} Employee;
+void addEmployee(FILE *fp, Employee emp, int record_num) {
+    fseek(fp, record_num * sizeof(Employee), SEEK_SET);
+    fwrite(&emp, sizeof(Employee), 1, fp);
+}
+void readEmployee(FILE *fp, int record_num) {
+    Employee emp;
+    fseek(fp, record_num * sizeof(Employee), SEEK_SET);
+    if (fread(&emp, sizeof(Employee), 1, fp) == 1) {
+        printf("Employee ID: %d\n", emp.id);
+        printf("Name       : %s\n", emp.name);
+        printf("Salary     : %.2f\n", emp.salary);
+    } else {
+        printf("No record found at position %d\n", record_num);
+    }
+}
+int main() {
+    FILE *fp = fopen(FILE_NAME, "r+b");  // Open for read/write binary
+    if (!fp) {
+        // File doesn't exist, create new
+        fp = fopen(FILE_NAME, "w+b");
+        if (!fp) {
+            perror("Unable to open file");
+            return 1;
+        }
+    }
+    int choice, rec_num;
+    Employee emp;
+    while (1) {
+        printf("\n1. Add/Update Employee\n2. Read Employee\n3. Exit\nEnter choice: ");
+        scanf("%d", &choice);
+        switch(choice) {
+            case 1:
+                printf("Enter record number (0 based index): ");
+                scanf("%d", &rec_num);
+                printf("Enter employee ID: ");
+                scanf("%d", &emp.id);
+                printf("Enter name: ");
+                getchar(); // consume newline
+                fgets(emp.name, sizeof(emp.name), stdin);
+                emp.name[strcspn(emp.name, "\n")] = '\0';  // Remove trailing newline
+                printf("Enter salary: ");
+                scanf("%f", &emp.salary);
+                addEmployee(fp, emp, rec_num);
+                printf("Record saved successfully.\n");
+                break;
+            case 2:
+                printf("Enter record number to read: ");
+                scanf("%d", &rec_num);
+                readEmployee(fp, rec_num);
+                break;
+            case 3:
+                fclose(fp);
+                printf("Exiting program.\n");
+                exit(0);
+            default:
+                printf("Invalid choice! Try again.\n");
+        }
+    }
+    return 0;
+}
+
+SAMPLE INPUT & OUTPUT :
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 1
+Enter record number (0 based index): 0
+Enter employee ID: 101
+Enter name: Alice
+Enter salary: 50000
+
+Record saved successfully.
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 1
+Enter record number (0 based index): 1
+Enter employee ID: 102
+Enter name: Bob
+Enter salary: 60000
+
+Record saved successfully.
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 2
+Enter record number to read: 0
+Employee ID: 101
+Name       : Alice
+Salary     : 50000.00
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 2
+Enter record number to read: 1
+Employee ID: 102
+Name       : Bob
+Salary     : 60000.00
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 2
+Enter record number to read: 2
+No record found at position 2
+
+1. Add/Update Employee
+2. Read Employee
+3. Exit
+Enter choice: 3
+Exiting program.

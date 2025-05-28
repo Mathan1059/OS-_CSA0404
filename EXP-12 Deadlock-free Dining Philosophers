@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+#define N 5
+#define THINKING 0
+#define HUNGRY 1
+#define EATING 2
+int state[N];
+sem_t mutex, s[N];
+void test(int i) {
+    if (state[i] == HUNGRY && state[(i+4)%N] != EATING && state[(i+1)%N] != EATING) {
+        state[i] = EATING;
+        printf("Philosopher %d is EATING.\n", i);
+        sem_post(&s[i]);
+    }
+}
+void take_forks(int i) {
+    sem_wait(&mutex);
+    state[i] = HUNGRY;
+    printf("Philosopher %d is HUNGRY.\n", i);
+    test(i);
+    sem_post(&mutex);
+    sem_wait(&s[i]);
+}
+void put_forks(int i) {
+    sem_wait(&mutex);
+    state[i] = THINKING;
+    printf("Philosopher %d put down forks and starts THINKING.\n", i);
+    test((i+4)%N);
+    test((i+1)%N);
+    sem_post(&mutex);
+}
+void* philosopher(void* num) {
+    int i = *(int*)num;
+    while (1) {
+        printf("Philosopher %d is THINKING.\n", i);
+        sleep(1);  // Thinking
+        take_forks(i);
+        sleep(2);  // Eating
+        put_forks(i);
+    }
+}
+int main() {
+    pthread_t tid[N];
+    int ids[N];
+    sem_init(&mutex,0,1);
+    for (int i=0; i<N; i++) sem_init(&s[i],0,0);
+    for (int i=0; i<N; i++) {
+        ids[i] = i;
+        pthread_create(&tid[i], NULL, philosopher, &ids[i]);
+    }
+    for (int i=0; i<N; i++) pthread_join(tid[i], NULL);
+    return 0;
+}
+
+OUTPUT :
+Philosopher 0 is THINKING.
+Philosopher 1 is THINKING.
+Philosopher 2 is THINKING.
+Philosopher 3 is THINKING.
+Philosopher 4 is THINKING.
+Philosopher 0 is HUNGRY.
+Philosopher 0 is EATING.
+Philosopher 1 is HUNGRY.
+Philosopher 0 put down forks and starts THINKING.
+Philosopher 2 is HUNGRY.
+Philosopher 2 is EATING.
+Philosopher 1 is HUNGRY.
+Philosopher 2 put down forks and starts THINKING.
+Philosopher 4 is HUNGRY.
+Philosopher 4 is EATING.
+Philosopher 3 is HUNGRY.
+Philosopher 4 put down forks and starts THINKING.
+Philosopher 1 is EATING.
+...
